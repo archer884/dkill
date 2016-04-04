@@ -43,7 +43,10 @@ fn clean_dir<P: AsRef<Path>>(path: P) {
 
 fn group_files<P: AsRef<Path>>(path: P) -> Vec<(Vec<u8>, Vec<DirEntry>)> {
     let grouped_files = FileIter::new(path)
-        .filter_map(|file| FileHash::from_entry(file).ok())
+        .filter_map(|file| {
+            println!("Processing: {}", file.path().display());
+            FileHash::from_entry(file).ok()
+        })
         .map(|filehash| (filehash.hash, filehash.entry))
         .fold(HashMap::new(), |mut map, (hash, entry)| {
             map.entry(hash).or_insert(Vec::new()).push(entry);
