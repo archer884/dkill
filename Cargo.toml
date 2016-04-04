@@ -1,0 +1,8 @@
+[package]
+name = "dkill"
+version = "0.1.0"
+authors = ["J/A <archer884@gmail.com>"]
+
+[dependencies]
+sha1 = "*"
+walkdir = "*"
