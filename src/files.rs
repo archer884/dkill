@@ -60,11 +60,11 @@ fn hash_file(path: &Path) -> Result<Vec<u8>> {
     match File::open(path) {
         Err(e) => Err(e),
         Ok(mut file) => {
-            let mut buffer = [0u8; 1048576];
+            let mut buffer = box [0u8; 8388608];
             let mut hash = Sha1::new();
             
             loop {
-                let bytes_read = file.read(&mut buffer)?;
+                let bytes_read = file.read(&mut *buffer)?;
                 if bytes_read > 0 {
                     hash.update(&buffer[0..bytes_read]);
                 }
