@@ -44,7 +44,6 @@ fn clean<I, P>(paths: I, options: CommandOptions)
 {
     for (_, group) in group_files(paths, &options) {
         for file in group.iter().skip(1) {
-            println!("Removing: {}", file.path().display());
             fs::remove_file(file.path()).ok();
         }
     }

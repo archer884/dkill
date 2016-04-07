@@ -17,14 +17,14 @@ impl CommandOptions {
         
         // I have no idea why I can't just map this. Any time I try to use map for this,
         // it complains that I'm not allowed to move borrowed things. 
-        fn match_pattern(path: &str, pattern: &Option<Regex>) -> bool {
+        fn match_pattern(path: &str, pattern: &Option<Regex>, default: bool) -> bool {
             match pattern {
-                &None => return true,
+                &None => return default,
                 &Some(ref pattern) => pattern.is_match(path), 
             }
         }
         
-        match_pattern(&path, &self.include) && !match_pattern(&path, &self.exclude)
+        match_pattern(&path, &self.include, true) && !match_pattern(&path, &self.exclude, false)
     }
 }
 
