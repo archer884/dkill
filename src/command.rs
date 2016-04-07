@@ -1,3 +1,5 @@
+use std::error::Error;
+use std::fmt;
 use std::path::{Path, PathBuf};
 use clap::ArgMatches;
 use regex::Regex;
@@ -31,48 +33,86 @@ impl CommandOptions {
 pub enum Command {
     List(Vec<PathBuf>, CommandOptions),
     Clean(Vec<PathBuf>, CommandOptions),
-    Invalid(String),
 }
 
-pub fn read() -> Command {
+#[derive(Debug)]
+pub enum CommandError {
+    BadIncludePattern(Box<Error>),
+    BadExcludePattern(Box<Error>),
+    BadPathHierarchy,
+    InvalidCommand(String),
+}
+
+impl fmt::Display for CommandError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &CommandError::BadIncludePattern(ref e) => write!(f, "Error! Failed to compile include pattern:\n\t{}", e),
+            &CommandError::BadExcludePattern(ref e) => write!(f, "Error! Failed to compile exclude pattern:\n\t{}", e),
+            &CommandError::BadPathHierarchy => write!(f, "Error! A path provided for inspection is a child of another path provided for inspection"),
+            &CommandError::InvalidCommand(ref usage) => write!(f, "{}", usage),
+        }
+    }
+} 
+
+pub fn read() -> Result<Command, CommandError> {
     let matches = get_matches();
     match get_matches().subcommand() {
         ("list", Some(matches)) => list_command(matches),
         ("clean", Some(matches)) => clean_command(matches),
-        _ => Command::Invalid(matches.usage().to_owned())
+        _ => Err(CommandError::InvalidCommand(matches.usage().to_owned())),
     }
 }
 
-fn list_command<'a>(matches: &'a ArgMatches<'a>) -> Command {
-    Command::List(
-        read_paths(matches),
-        read_options(matches),
-    )
+fn list_command<'a>(matches: &'a ArgMatches<'a>) -> Result<Command, CommandError> {
+    Ok(Command::List(
+        read_paths(matches)?,
+        read_options(matches)?,
+    ))
 }
 
-fn clean_command<'a>(matches: &'a ArgMatches<'a>) -> Command {
+fn clean_command<'a>(matches: &'a ArgMatches<'a>) -> Result<Command, CommandError> {
     if matches.is_present("force") {
-        Command::Clean(
-            read_paths(matches),
-            read_options(matches),
-        )
+        Ok(Command::Clean(
+            read_paths(matches)?,
+            read_options(matches)?,
+        ))
     } else {
-        Command::List(
-            read_paths(matches),
-            read_options(matches),
-        )
+        Ok(Command::List(
+            read_paths(matches)?,
+            read_options(matches)?,
+        ))
     }
 }
 
-fn read_paths<'a>(matches: &'a ArgMatches<'a>) -> Vec<PathBuf> {
-    matches.values_of("path").unwrap().map(|path| PathBuf::from(path)).collect() 
+fn read_paths<'a>(matches: &'a ArgMatches<'a>) -> Result<Vec<PathBuf>, CommandError> {
+    let paths: Vec<_> = matches.values_of("path").unwrap().map(|path| PathBuf::from(path)).collect();
+    if is_non_overlapping(&paths) {
+        Ok(paths)
+    } else {
+        Err(CommandError::BadPathHierarchy)
+    }
 }
 
-fn read_options<'a>(matches: &'a ArgMatches<'a>) -> CommandOptions {
-    CommandOptions {
-        include: matches.value_of("include").and_then(|pattern| Regex::new(pattern).ok()),
-        exclude: matches.value_of("exclude").and_then(|pattern| Regex::new(pattern).ok()),        
-    }
+fn read_options<'a>(matches: &'a ArgMatches<'a>) -> Result<CommandOptions, CommandError> {
+    Ok(CommandOptions {
+        include: match matches.value_of("include").map(|pattern| Regex::new(pattern)) {
+            Some(Err(e)) => return Err(CommandError::BadIncludePattern(box e)),
+            Some(Ok(regex)) => Some(regex),
+            None => None,
+        },
+        exclude: match matches.value_of("exclude").map(|pattern| Regex::new(pattern)) {
+            Some(Err(e)) => return Err(CommandError::BadExcludePattern(box e)),
+            Some(Ok(regex)) => Some(regex),
+            None => None,
+        },        
+    })
+}
+
+fn is_non_overlapping(paths: &[PathBuf]) -> bool {
+    paths.iter().enumerate().all(|(idx_a, path_a)| 
+        paths.iter().enumerate().all(|(idx_b, path_b)|
+            idx_a == idx_b || !path_b.starts_with(path_a)
+    ))
 }
 
 fn get_matches<'a>() -> ArgMatches<'a> {
@@ -84,8 +124,8 @@ fn get_matches<'a>() -> ArgMatches<'a> {
             (about: "List duplicate files.")
             (version: "0.1.0")
             (author: "J/A <archer884@gmail.com>")
-            (@arg include: -i --include ... "Regex pattern for files to be included")
-            (@arg exclude: -e --exclude ... "Regex pattern for files to be excluded")
+            (@arg include: -i --include +takes_value ... "Regex pattern for files to be included")
+            (@arg exclude: -e --exclude +takes_value ... "Regex pattern for files to be excluded")
             (@arg path: ... +required "Path(s) to be listed")
         )
         (@subcommand clean =>
@@ -93,8 +133,8 @@ fn get_matches<'a>() -> ArgMatches<'a> {
             (version: "0.1.0")
             (author: "J/A <archer884@gmail.com>")
             (@arg force: -f --force "Force program to delete duplicates")
-            (@arg include: -i --include ... "Regex pattern for files to be included")
-            (@arg exclude: -e --exclude ... "Regex pattern for files to be excluded")
+            (@arg include: -i --include +takes_value ... "Regex pattern for files to be included")
+            (@arg exclude: -e --exclude +takes_value ... "Regex pattern for files to be excluded")
             (@arg path: ... +required "Path(s) to be cleaned")
         )
     ).get_matches()

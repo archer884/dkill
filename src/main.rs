@@ -19,9 +19,9 @@ use walkdir::DirEntry;
 
 fn main() {
     match command::read() {
-        Command::List(paths, options) => list(paths, options),
-        Command::Clean(paths, options) => clean(paths, options),
-        Command::Invalid(usage) => println!("{}", usage),
+        Ok(Command::List(paths, options)) => list(paths, options),
+        Ok(Command::Clean(paths, options)) => clean(paths, options),
+        Err(e) => println!("{}", e),
     }
 }
 
@@ -30,10 +30,9 @@ fn list<I, P>(paths: I, options: CommandOptions)
           I: IntoIterator<Item = P>
 {
     for (hash, group) in group_files(paths, &options) {
-        println!("Hash: {}", hash.hex());
-        
+        println!("#{}", hash.hex());
         for item in group {
-            println!("\t{:?}", item);
+            println!(" {}", item.path().to_str().unwrap());
         }
     }
 }
@@ -65,7 +64,7 @@ fn group_files<I, P>(paths: I, options: &CommandOptions) -> Vec<(Vec<u8>, Vec<Di
     grouped_files.into_iter()
         .filter(|&(_, ref group)| group.len() > 1)
         .map(|(key, mut group)| {
-            group.sort_by_key(|entry| entry.path().to_str().map(|s| s.len()).unwrap_or(0));
+            group.sort_by_key(|entry| entry.path().to_str().unwrap().len());
             (key, group)
         })
         .collect()
