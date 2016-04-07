@@ -4,5 +4,7 @@ version = "0.1.0"
 authors = ["J/A <archer884@gmail.com>"]
 
 [dependencies]
+clap = { version = "*", features = ["unstable", "suggestions", "color"] }
+regex = "*"
 sha1 = "*"
 walkdir = "*"

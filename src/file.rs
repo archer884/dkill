@@ -2,6 +2,7 @@ use std::fmt;
 use std::fs::File;
 use std::path::Path;
 use std::io::{Read, Result};
+use hex::Hex;
 use sha1::Sha1;
 use walkdir;
 use walkdir::DirEntry;
@@ -51,8 +52,7 @@ impl FileHash {
 
 impl fmt::Display for FileHash {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let hash: String = self.hash.iter().map(|b| format!("{:02x}", b)).collect();
-        write!(f, "{{{}: {}}}", self.entry.path().display(), hash)
+        write!(f, "{{{}: {}}}", self.entry.path().display(), self.hash.hex())
     }
 }
 
