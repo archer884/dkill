@@ -6,14 +6,14 @@ extern crate sha1;
 extern crate walkdir;
 
 mod command;
+mod dedup;
 mod file;
 mod hex;
 
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use command::{Command, CommandOptions};
-use file::{FileHash, FileIter};
+use file::FileIter;
 use hex::Hex;
 use walkdir::DirEntry;
 
@@ -52,20 +52,19 @@ fn group_files<I, P>(paths: I, options: &CommandOptions) -> Vec<(Vec<u8>, Vec<Di
     where P: AsRef<Path>,
           I: IntoIterator<Item = P>
 {
-    let grouped_files = paths.into_iter()
+    let files = paths.into_iter()
         .flat_map(|path| FileIter::new(path))
-        .filter(|entry| options.filter(entry.path()))
-        .filter_map(|entry| FileHash::from_entry(entry).map(|filehash| (filehash.hash, filehash.entry)).ok())
-        .fold(HashMap::new(), |mut map, (hash, entry)| {
-            map.entry(hash).or_insert(Vec::new()).push(entry);
-            map
+        .filter_map(|entry| if options.filter(entry.path()) {
+            match entry.path().metadata().map(|data| data.len()) {
+                Ok(len) => Some((len, entry)),
+                Err(_) => None,
+            }
+        } else {
+            None
         });
         
-    grouped_files.into_iter()
-        .filter(|&(_, ref group)| group.len() > 1)
-        .map(|(key, mut group)| {
-            group.sort_by_key(|entry| entry.path().to_str().unwrap().len());
-            (key, group)
-        })
-        .collect()
+    let files_by_size = dedup::group_by_size(files);
+    dedup::group_by_hash(
+        files_by_size.into_iter().flat_map(|group| group.into_iter())
+    )
 }
