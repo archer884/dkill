@@ -7,6 +7,7 @@ use regex::Regex;
 pub struct CommandOptions {
     include: Option<Regex>,
     exclude: Option<Regex>,
+    verbose: bool,
 }
 
 impl CommandOptions {
@@ -27,6 +28,10 @@ impl CommandOptions {
         }
         
         match_pattern(&path, &self.include, true) && !match_pattern(&path, &self.exclude, false)
+    }
+    
+    pub fn verbose(&self) -> bool {
+        self.verbose
     }
 }
 
@@ -104,7 +109,8 @@ fn read_options<'a>(matches: &'a ArgMatches<'a>) -> Result<CommandOptions, Comma
             Some(Err(e)) => return Err(CommandError::BadExcludePattern(box e)),
             Some(Ok(regex)) => Some(regex),
             None => None,
-        },        
+        },
+        verbose: matches.is_present("verbose"),
     })
 }
 
@@ -124,6 +130,7 @@ fn get_matches<'a>() -> ArgMatches<'a> {
             (about: "List duplicate files.")
             (version: "0.1.0")
             (author: "J/A <archer884@gmail.com>")
+            (@arg verbose: -v --verbose "Verbose mode")
             (@arg include: -i --include +takes_value ... "Regex pattern for files to be included")
             (@arg exclude: -e --exclude +takes_value ... "Regex pattern for files to be excluded")
             (@arg path: ... +required "Path(s) to be listed")
@@ -133,6 +140,7 @@ fn get_matches<'a>() -> ArgMatches<'a> {
             (version: "0.1.0")
             (author: "J/A <archer884@gmail.com>")
             (@arg force: -f --force "Force program to delete duplicates")
+            (@arg verbose: -v --verbose "Verbose mode")
             (@arg include: -i --include +takes_value ... "Regex pattern for files to be included")
             (@arg exclude: -e --exclude +takes_value ... "Regex pattern for files to be excluded")
             (@arg path: ... +required "Path(s) to be cleaned")

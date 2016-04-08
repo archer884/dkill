@@ -43,6 +43,9 @@ fn clean<I, P>(paths: I, options: CommandOptions)
 {
     for (_, group) in group_files(paths, &options) {
         for file in group.iter().skip(1) {
+            if options.verbose() {
+                println!("removing: {}", file.path().display());
+            }
             fs::remove_file(file.path()).ok();
         }
     }
@@ -65,6 +68,7 @@ fn group_files<I, P>(paths: I, options: &CommandOptions) -> Vec<(Vec<u8>, Vec<Di
         
     let files_by_size = dedup::group_by_size(files);
     dedup::group_by_hash(
-        files_by_size.into_iter().flat_map(|group| group.into_iter())
+        files_by_size.into_iter().flat_map(|group| group.into_iter()),
+        options.verbose(),
     )
 }
