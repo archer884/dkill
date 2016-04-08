@@ -53,7 +53,7 @@ impl fmt::Display for CommandError {
         match self {
             &CommandError::BadIncludePattern(ref e) => write!(f, "Error! Failed to compile include pattern:\n\t{}", e),
             &CommandError::BadExcludePattern(ref e) => write!(f, "Error! Failed to compile exclude pattern:\n\t{}", e),
-            &CommandError::BadPathHierarchy => write!(f, "Error! A path provided for inspection is a child of another path provided for inspection"),
+            &CommandError::BadPathHierarchy => write!(f, "Error! A path provided for inspection overlaps with another path provided for inspection"),
             &CommandError::InvalidCommand(ref usage) => write!(f, "{}", usage),
         }
     }
