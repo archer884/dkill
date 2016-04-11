@@ -13,9 +13,9 @@ mod hex;
 use std::fs;
 use std::path::Path;
 use command::{Command, CommandOptions};
+use dedup::SortableDirEntry;
 use file::FileIter;
 use hex::Hex;
-use walkdir::DirEntry;
 
 fn main() {
     match command::read() {
@@ -51,7 +51,7 @@ fn clean<I, P>(paths: I, options: CommandOptions)
     }
 }
 
-fn group_files<I, P>(paths: I, options: &CommandOptions) -> Vec<(Vec<u8>, Vec<DirEntry>)>
+fn group_files<I, P>(paths: I, options: &CommandOptions) -> Vec<(Vec<u8>, Vec<SortableDirEntry>)>
     where P: AsRef<Path>,
           I: IntoIterator<Item = P>
 {
@@ -59,7 +59,7 @@ fn group_files<I, P>(paths: I, options: &CommandOptions) -> Vec<(Vec<u8>, Vec<Di
         .flat_map(|path| FileIter::new(path))
         .filter_map(|entry| if options.filter(entry.path()) {
             match entry.path().metadata().map(|data| data.len()) {
-                Ok(len) => Some((len, entry)),
+                Ok(len) => Some((len, SortableDirEntry::new(entry))),
                 Err(_) => None,
             }
         } else {
@@ -68,7 +68,13 @@ fn group_files<I, P>(paths: I, options: &CommandOptions) -> Vec<(Vec<u8>, Vec<Di
         
     let files_by_size = dedup::group_by_size(files);
     dedup::group_by_hash(
-        files_by_size.into_iter().flat_map(|group| group.into_iter()),
+        files_by_size.into_iter().flat_map(|group| dedup_group_by_path(group).into_iter()),
         options.verbose(),
     )
+}
+
+fn dedup_group_by_path(mut group: Vec<SortableDirEntry>) -> Vec<SortableDirEntry> {
+    group.sort();
+    group.dedup();
+    group
 }

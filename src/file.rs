@@ -2,6 +2,7 @@ use std::fmt;
 use std::fs::File;
 use std::path::Path;
 use std::io::{Read, Result};
+use dedup::SortableDirEntry;
 use hex::Hex;
 use sha1::Sha1;
 use walkdir;
@@ -37,12 +38,12 @@ impl Iterator for FileIter {
 
 #[derive(Debug)]
 pub struct FileHash {
-    pub entry: DirEntry,
+    pub entry: SortableDirEntry,
     pub hash: Vec<u8>,
 }
 
 impl FileHash {
-    pub fn from_entry(entry: DirEntry) -> Result<FileHash> {
+    pub fn from_entry(entry: SortableDirEntry) -> Result<FileHash> {
         Ok(FileHash {
             hash: hash_file(&entry.path())?,
             entry: entry,
