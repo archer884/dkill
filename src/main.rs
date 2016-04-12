@@ -7,13 +7,14 @@ extern crate walkdir;
 
 mod command;
 mod dedup;
+mod entry;
 mod file;
 mod hex;
 
 use std::fs;
 use std::path::Path;
 use command::{Command, CommandOptions};
-use dedup::SortableDirEntry;
+use entry::SortableDirEntry;
 use file::FileIter;
 use hex::Hex;
 
