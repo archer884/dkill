@@ -100,12 +100,12 @@ fn read_paths<'a>(matches: &'a ArgMatches<'a>) -> Result<Vec<PathBuf>, CommandEr
 
 fn read_options<'a>(matches: &'a ArgMatches<'a>) -> Result<CommandOptions, CommandError> {
     Ok(CommandOptions {
-        include: match matches.value_of("include").map(|pattern| Regex::new(pattern)) {
+        include: match matches.value_of("include").map(Regex::new) {
             Some(Err(e)) => return Err(CommandError::BadIncludePattern(box e)),
             Some(Ok(regex)) => Some(regex),
             None => None,
         },
-        exclude: match matches.value_of("exclude").map(|pattern| Regex::new(pattern)) {
+        exclude: match matches.value_of("exclude").map(Regex::new) {
             Some(Err(e)) => return Err(CommandError::BadExcludePattern(box e)),
             Some(Ok(regex)) => Some(regex),
             None => None,
