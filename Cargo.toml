@@ -5,6 +5,7 @@ authors = ["J/A <archer884@gmail.com>"]
 
 [dependencies]
 clap = { version = "*", features = ["unstable", "suggestions", "color"] }
+clippy = "*"
 regex = "*"
 sha1 = "*"
 walkdir = "*"
