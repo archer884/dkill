@@ -56,7 +56,7 @@ fn group_files<I, P>(paths: I, options: &CommandOptions) -> Vec<(Vec<u8>, Vec<So
           I: IntoIterator<Item = P>
 {
     let files = paths.into_iter()
-        .flat_map(|path| FileIter::new(path))
+        .flat_map(FileIter::new)
         .filter_map(|entry| if options.filter(entry.path()) {
             match entry.path().metadata().map(|data| data.len()) {
                 Ok(len) => Some((len, SortableDirEntry::new(entry))),

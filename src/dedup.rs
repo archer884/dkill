@@ -41,7 +41,7 @@ pub fn group_by_size<I>(paths: I) -> Vec<Vec<SortableDirEntry>>
     where I: Iterator<Item = (u64, SortableDirEntry)>
 {
     let groups = paths.fold(HashMap::new(), |mut map, (len, entry)| {
-        map.entry(len).or_insert(Vec::new()).push(entry);
+        map.entry(len).or_insert_with(Vec::new).push(entry);
         map
     });
     
@@ -61,7 +61,7 @@ pub fn group_by_hash<I>(paths: I, verbose: bool) -> Vec<(Vec<u8>, Vec<SortableDi
             FileHash::from_entry(entry).map(|filehash| (filehash.hash, filehash.entry)).ok()
         })
         .fold(HashMap::new(), |mut map, (hash, entry)| {
-            map.entry(hash).or_insert(Vec::new()).push(entry);
+            map.entry(hash).or_insert_with(Vec::new).push(entry);
             map
         });
         

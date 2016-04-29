@@ -21,9 +21,9 @@ impl CommandOptions {
         // I have no idea why I can't just map this. Any time I try to use map for this,
         // it complains that I'm not allowed to move borrowed things. 
         fn match_pattern(path: &str, pattern: &Option<Regex>, default: bool) -> bool {
-            match pattern {
-                &None => return default,
-                &Some(ref pattern) => pattern.is_match(path), 
+            match *pattern {
+                None => default,
+                Some(ref pattern) => pattern.is_match(path), 
             }
         }
         
@@ -50,11 +50,11 @@ pub enum CommandError {
 
 impl fmt::Display for CommandError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &CommandError::BadIncludePattern(ref e) => write!(f, "Error! Failed to compile include pattern:\n\t{}", e),
-            &CommandError::BadExcludePattern(ref e) => write!(f, "Error! Failed to compile exclude pattern:\n\t{}", e),
-            &CommandError::BadPathHierarchy => write!(f, "Error! A path provided for inspection overlaps with another path provided for inspection"),
-            &CommandError::InvalidCommand(ref usage) => write!(f, "{}", usage),
+        match *self {
+            CommandError::BadIncludePattern(ref e) => write!(f, "Error! Failed to compile include pattern:\n\t{}", e),
+            CommandError::BadExcludePattern(ref e) => write!(f, "Error! Failed to compile exclude pattern:\n\t{}", e),
+            CommandError::BadPathHierarchy => write!(f, "Error! A path provided for inspection overlaps with another path provided for inspection"),
+            CommandError::InvalidCommand(ref usage) => write!(f, "{}", usage),
         }
     }
 } 
@@ -90,7 +90,7 @@ fn clean_command<'a>(matches: &'a ArgMatches<'a>) -> Result<Command, CommandErro
 }
 
 fn read_paths<'a>(matches: &'a ArgMatches<'a>) -> Result<Vec<PathBuf>, CommandError> {
-    let paths: Vec<_> = matches.values_of("path").unwrap().map(|path| PathBuf::from(path)).collect();
+    let paths: Vec<_> = matches.values_of("path").unwrap().map(PathBuf::from).collect();
     if is_non_overlapping(&paths) {
         Ok(paths)
     } else {
